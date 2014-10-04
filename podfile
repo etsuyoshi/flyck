@@ -1,0 +1,10 @@
+pod "MDCSwipeToChoose"
+
+
+
+pod 'IDMPhotoBrowser'
+pod 'UICKeyChainStore'
+pod 'SDWebImage'
+pod 'SVProgressHUD'
+pod 'REMenu', '~> 1.10'
+pod 'NXOAuth2Client', '~> 1.2.6'

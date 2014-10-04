@@ -7,8 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <MDCSwipeToChoose/MDCSwipeToChoose.h>
+#import "REMenu.h"
+#import <SDWebImage/UIImageView+WebCache.h>
+#import <SVProgressHUD/SVProgressHUD.h>
 
-@interface ViewController : UIViewController
+
+@interface ViewController : UIViewController<MDCSwipeToChooseDelegate>
+@property (strong, readonly, nonatomic) REMenu *topMenu;
 
 
 @end
