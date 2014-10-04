@@ -7,22 +7,32 @@
 //
 
 #import "ViewController.h"
+#import <SVProgressHUD/SVProgressHUD.h>
+
+#define LENGTH_MAX_IMAGE 50
+
 @import Photos;
 
 @interface ViewController ()
 
 @end
 
+
+//一度likeした写真はそのままにする
+
 @implementation ViewController{
     MDCSwipeToChooseViewOptions *options;
     
     
     UIImageView *imageView;
-    UILabel *label;
-    UILabel *label2;
+    UILabel *label_property;
+    UILabel *label_operation;
     
 //    NSMutableArray *arrImage;
-    NSMutableArray *arrAssets;
+    NSMutableArray *arrAllAssets;//
+//    NSMutableArray *arrAssetsOnDisplay;//画面上に表示されているアセット(フリックしたら消去)
+    
+    UIButton *btnTrash;
     
     BOOL isFirstDisplay;
 }
@@ -30,15 +40,37 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-    
+    [SVProgressHUD showWithStatus:@"写真取得中..."];
     self.title = @"flyck";
     
     isFirstDisplay = false;
     
 //    arrImage = [NSMutableArray array];
-    arrAssets = [NSMutableArray array];
+    arrAllAssets = [NSMutableArray array];
+    
+    label_operation = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width,70)];
+    label_operation.center =
+    CGPointMake(self.view.bounds.size.width/2,
+                label_operation.bounds.size.height);
+//                self.view.bounds.size.height-label_operation.bounds.size.height);
+    label_operation.textAlignment = NSTextAlignmentCenter;
+    [label_operation setText:@"move left to trash or right to save"];
+    [label_operation setTextColor:[UIColor blackColor]];
+    [self.view addSubview: label_operation];
     
     
+    
+    label_property = [[UILabel alloc]init];
+    label_property.frame = CGRectMake(0, 0, self.view.bounds.size.width,
+                                      50);
+    label_property.center =
+    CGPointMake(self.view.bounds.size.width/2,
+                self.view.bounds.size.height-label_property.bounds.size.height);
+    [label_property setTextAlignment:NSTextAlignmentCenter];
+    [label_property setTextColor: [UIColor blackColor]];
+    label_property.font = [UIFont systemFontOfSize:20];
+    [label_property setText:@"property"];
+    [self.view addSubview:label_property];
     
 }
 
@@ -49,25 +81,17 @@
 
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
+    
+    
+    
+    
 //http://dev.classmethod.jp/references/ios8-photo-kit-2/
     
 //    imageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"b0.jpg"]];
 //    imageView.frame = CGRectMake(0, 0, 200, 200);
 //    imageView.backgroundColor = [UIColor redColor];
 //    [self.view addSubview:imageView];
-//    
-    label = [[UILabel alloc]init];
-    label.frame = CGRectMake(0, 0, 300, 300);
-    label.center = CGPointMake(self.view.bounds.size.width/2,
-                               60);
-//    label.font = [UIFont systemFontOfSize:3000];
-//    label.textColor = [UIColor redColor];
-//    label.text = @"取得中...";
-//    [label setText:@"取得中..."];
-    [label setTextAlignment:NSTextAlignmentCenter];
-    [label setTextColor: [UIColor blackColor]];
-    label.font = [UIFont systemFontOfSize:20];
-    [self.view addSubview:label];
+//
 //    label2 = [[UILabel alloc]init];
 //    label2.text=@"サイズ";
 //    [self.view addSubview:label2];
@@ -80,11 +104,11 @@
     
     // type: PHCollectionListTypeFolder
     // subtype: PHCollectionListSubtypeAny
-    PHFetchResult *folderLists = [PHCollectionList fetchCollectionListsWithType:PHCollectionListTypeFolder subtype:PHCollectionListSubtypeAny options:nil];
+//    PHFetchResult *folderLists = [PHCollectionList fetchCollectionListsWithType:PHCollectionListTypeFolder subtype:PHCollectionListSubtypeAny options:nil];
     
     // type: PHCollectionListTypeSmartFolder
     // subtype: PHCollectionListSubtypeAny
-    PHFetchResult *smartFolderList = [PHCollectionList fetchCollectionListsWithType:PHCollectionListTypeSmartFolder subtype:PHCollectionListSubtypeAny options:nil];
+//    PHFetchResult *smartFolderList = [PHCollectionList fetchCollectionListsWithType:PHCollectionListTypeSmartFolder subtype:PHCollectionListSubtypeAny options:nil];
     
     
     [momentLists enumerateObjectsUsingBlock:^(PHCollectionList *momentCollectionList, NSUInteger idx, BOOL *stop) {
@@ -107,15 +131,16 @@
             [assets enumerateObjectsUsingBlock:^(PHAsset *asset, NSUInteger idx, BOOL *stop) {
                 NSLog(@"asset:%@", asset);
                 
-                NSLog(@"arrAssets.count = %d", (int)arrAssets.count);
+                NSLog(@"arrAssets.count = %d", (int)arrAllAssets.count);
                 
                 
-                if(arrAssets.count < 30){
+                if(arrAllAssets.count < LENGTH_MAX_IMAGE){
                     
-                    [arrAssets addObject:asset];
+                    [arrAllAssets addObject:asset];
                     
+                    //既定数LengthMaxImageを超えた場合
                     if(!isFirstDisplay &&
-                       !(arrAssets.count < 30)){
+                       !(arrAllAssets.count < LENGTH_MAX_IMAGE)){
                         isFirstDisplay = true;
                         [self setAssetToMDCSwipe];
                         
@@ -202,8 +227,16 @@
 }
 
 -(void)setAssetToMDCSwipe{
+    [SVProgressHUD dismiss];
+    NSLog(@"setAssetToMDCSwipe for asset.count = %d", (int)arrAllAssets.count);
     
-    NSLog(@"setAssetToMDCSwipe for asset.count = %d", (int)arrAssets.count);
+    
+    PHAsset *asset;
+    
+    asset = [arrAllAssets lastObject];
+    //label_property:更新
+    [label_property setText:
+     [NSString stringWithFormat:@"%d:%@",(int)arrAllAssets.count, asset.creationDate]];
     
     options = [MDCSwipeToChooseViewOptions new];
     options.delegate = self;
@@ -215,21 +248,26 @@
            state.direction == MDCSwipeDirectionLeft){
             NSLog(@"Let go now to delete the photo!");
         }
+        
+        
+        
     };
     
-    MDCSwipeToChooseView *viewSwipe;
-    PHAsset *asset;
-    for(int i = 0;i < arrAssets.count;i++){
-        NSLog(@"asset %d = %@", i, arrAssets[i]);
+    
+    //カスタム仕様にすることで文字データを内包できると思った(がやってない)
+//    MDCSwipeToChooseView *viewSwipe;
+    CustomisedMDCSwipeToChooseView *viewSwipe;
+    for(int i = 0;i < arrAllAssets.count;i++){
+        NSLog(@"asset %d = %@", i, arrAllAssets[i]);
         viewSwipe =
-        [[MDCSwipeToChooseView alloc]
-         initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width/1.3f,
-                                  self.view.bounds.size.height/1.3f)
+        [[CustomisedMDCSwipeToChooseView alloc]
+         initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width/1.5f,
+                                  self.view.bounds.size.height/1.5f)
          options:options];
         viewSwipe.center = self.view.center;
         viewSwipe.tag = 0;
         
-        asset = (PHAsset *)arrAssets[i];
+        asset = (PHAsset *)arrAllAssets[i];
         [[PHImageManager defaultManager]
          requestImageForAsset:asset
          targetSize:self.view.bounds.size//CGSizeMake(300,300)
@@ -242,66 +280,14 @@
                  viewSwipe.imageView.image = result;
                  viewSwipe.tag = i;
                  
-                 [self.view addSubview:viewSwipe];
+                 
              }
          }];
+        
+        [self.view addSubview:viewSwipe];
 
     }
 }
-
-//-(void)displayimage{
-//    NSLog(@"num of factor = %d", (int)arrImage.count);
-//    
-//    
-//    options = [MDCSwipeToChooseViewOptions new];
-//    options.delegate = self;
-//    options.likedText = @"Like";
-//    options.likedColor = [UIColor blueColor];
-//    options.nopeText = @"Dis";
-//    options.onPan = ^(MDCPanState *state){
-//        if(state.thresholdRatio == 1.f &&
-//           state.direction == MDCSwipeDirectionLeft){
-//            NSLog(@"Let go now to delete the photo!");
-//        }
-//    };
-//    
-//    
-//    MDCSwipeToChooseView *viewSwipe;
-//    
-//    for(int i = 0;i < arrImage.count;i++){
-//        viewSwipe =
-//        [[MDCSwipeToChooseView alloc]
-//         initWithFrame:self.view.bounds//CGRectMake(0, 0, 300, 300)
-//         options:options];
-//        viewSwipe.center = self.view.center;
-//        viewSwipe.tag = 0;
-////        view.imageView.image = [UIImage imageNamed:@"photo"];
-//        
-//        //画像データ取得
-////        NSString *strUrl =
-////        arrHibitaImageUrl[0];
-//        //        arrHibitaImageUrl[i % arrHibitaImageUrl.count][@"img1_500"];
-////        NSLog(@"strUrl = %@", strUrl);
-//        
-////        (NSString *)arrTmpImageUrl[i % arrTmpImageUrl.count];
-//
-////        NSLog(@"noOfImage = %d : %@", noOfImage, strUrl);
-//        
-//        viewSwipe.imageView.image = (UIImage *)arrImage[i];
-////        [viewSwipe.imageView
-////         setImageWithURL:[NSURL URLWithString:strUrl]
-////         placeholderImage:nil
-////         completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType){
-////             [viewSwipe.imageView
-////              setImageWithURL:[NSURL URLWithString:strUrl]
-////              placeholderImage:image];
-////             
-////             [SVProgressHUD dismiss];
-////         }];
-//        [self.view addSubview:viewSwipe];
-//    }
-//
-//}
 
 
 #pragma delegate method of mdcswipe
@@ -312,20 +298,63 @@
 
 // This is called then a user swipes the view fully left or right.
 - (void)view:(UIView *)view wasChosenWithDirection:(MDCSwipeDirection)direction {
+    
+    if(view == nil || [view isEqual:[NSNull null]]){
+        return ;
+    }
+    int selectedNo = (int)view.tag;
+    
+    //順番通りに配置(当該メソッドも呼び出)されるとは限らないので注意が必要！
     if (direction == MDCSwipeDirectionLeft) {
         NSLog(@"Photo deleted!");
+        
+        PHAsset *nowAsset = arrAllAssets[selectedNo];
+        // 編集処理がサポートされているか
+        if ([nowAsset canPerformEditOperation:PHAssetEditOperationDelete]) {
+            // 変更をリクエストするblockを実行
+            [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                // Assetをlibraryから削除
+                [PHAssetChangeRequest deleteAssets:@[nowAsset]];
+            } completionHandler:^(BOOL success, NSError *error) {
+                if (success) {
+                    NSLog(@"%s delete success.", __PRETTY_FUNCTION__);
+                } else {
+                    NSLog(@"%s delete failure. Error: %@", __PRETTY_FUNCTION__, error);
+                }
+            }];
+        }
+        nowAsset = nil;
+        
     } else {
-        NSLog(@"Photo saved! %d", (int)view.tag);
+        NSLog(@"Photo saved! at no = %d", selectedNo);
         
         
-//        ItemData *itemd = [[ItemData alloc]init];
-//        itemd.strCategories = arrHibitaCategories[view.tag];
-//        itemd.strImageUrl = arrHibitaImageUrl[view.tag];
-//        itemd.strItemId = arrHibitaItemId[view.tag];
-//        
-//        [arrSavedItem addObject:itemd];
+        PHAsset *nextAsset;
+        if(selectedNo > 0){
+            //次のassetを取得する
+            nextAsset = arrAllAssets[selectedNo-1];
+        }else{//次がなければnilとする
+            nextAsset = nil;
+        }
         
+        //次がなければall processedとする
+        if(nextAsset == nil || [nextAsset isEqual:[NSNull null]]){
+            [label_property setText:@"all processed"];
+            [label_property setTextColor:[UIColor redColor]];
+        }else{
+            [label_property setText:
+             [NSString stringWithFormat:@"%d:%@",
+              selectedNo,
+              nextAsset.creationDate]];
+        }
+        
+        nextAsset = nil;
     }
+    
+    
+    //非表示状態になった(like or dislike両方)assetを削除する
+//    [arrAllAssets removeObjectAtIndex:selectedNo];
+    
 }
 
 @end

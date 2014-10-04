@@ -7,7 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MDCSwipeToChoose/MDCSwipeToChoose.h>
+#import "CustomisedMDCSwipeToChooseView.h"
+
 #import "REMenu.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SVProgressHUD/SVProgressHUD.h>
