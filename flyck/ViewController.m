@@ -10,6 +10,7 @@
 #import <SVProgressHUD/SVProgressHUD.h>
 
 #define LENGTH_MAX_IMAGE 50
+#define BUTTON_SIZE 30
 
 @import Photos;
 
@@ -18,7 +19,8 @@
 @end
 
 
-//一度likeした写真はそのままにする
+//一度likeした写真は次回は表示しないようにする→再度消去できるようにする
+//
 
 @implementation ViewController{
     MDCSwipeToChooseViewOptions *options;
@@ -34,6 +36,8 @@
     
     UIButton *btnTrash;
     
+    UIButton *btnUpdate;
+    
     BOOL isFirstDisplay;
 }
 
@@ -44,6 +48,9 @@
     self.title = @"flyck";
     
     isFirstDisplay = false;
+    
+    
+    
     
 //    arrImage = [NSMutableArray array];
     arrAllAssets = [NSMutableArray array];
@@ -72,6 +79,31 @@
     [label_property setText:@"property"];
     [self.view addSubview:label_property];
     
+    btnUpdate = [UIButton buttonWithType:UIButtonTypeCustom];
+    btnUpdate.frame = CGRectMake(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+    btnUpdate.center = CGPointMake(self.view.bounds.size.width/2,
+                                  self.view.bounds.size.height/2);
+    [btnUpdate setImage:[UIImage imageNamed:@"refresh_update"]
+               forState:UIControlStateNormal];
+    [btnUpdate addTarget:self
+                  action:@selector(tappedBtnUpdate:)
+        forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:btnUpdate];
+    
+}
+
+-(void)tappedBtnUpdate:(id)sender{
+    NSLog(@"tapped button add arrAllAssets");
+    
+    //初期化処理->別処理に分けても可能
+    
+    //以下注意！！！！！！
+    //更新時に格納数を判定して表示しているため未格納状態に設定するが、
+    //arrAllAssetsの要素数に応じて自動的にセットする場合はこの方法ではなくなるので注意！
+    arrAllAssets = [NSMutableArray array];
+    [label_property setTextColor:[UIColor blackColor]];
+    isFirstDisplay = false;//表示状態を初期化(まだ表示していないことにして必要データが集まったら表示できるステータスにする)
+    [self addArrAllAssets];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -84,7 +116,11 @@
     
     
     
+    [self addArrAllAssets];
     
+}
+
+-(void)addArrAllAssets{
 //http://dev.classmethod.jp/references/ios8-photo-kit-2/
     
 //    imageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"b0.jpg"]];
@@ -129,22 +165,24 @@
             // 3.PHAssetを取得
             PHFetchResult *assets = [PHAsset fetchAssetsInAssetCollection:momentAssetCollection options:nil];
             [assets enumerateObjectsUsingBlock:^(PHAsset *asset, NSUInteger idx, BOOL *stop) {
-                NSLog(@"asset:%@", asset);
+                NSLog(@"%dasset:%@",(int)assets.count, asset);
                 
                 NSLog(@"arrAssets.count = %d", (int)arrAllAssets.count);
                 
                 
                 if(arrAllAssets.count < LENGTH_MAX_IMAGE){
                     
-                    [arrAllAssets addObject:asset];
-                    
-                    //既定数LengthMaxImageを超えた場合
-                    if(!isFirstDisplay &&
-                       !(arrAllAssets.count < LENGTH_MAX_IMAGE)){
-                        isFirstDisplay = true;
-                        [self setAssetToMDCSwipe];
+                    if(![asset isFavorite]){//まだお気に入り設定（右スワイプされていなければ)
+                        [arrAllAssets addObject:asset];
                         
-                        return ;
+                        //既定数LengthMaxImageを超えた場合
+                        if(!isFirstDisplay &&
+                           !(arrAllAssets.count < LENGTH_MAX_IMAGE)){
+                            isFirstDisplay = true;
+                            [self setAssetToMDCSwipe];
+                            
+                            return ;
+                        }
                     }
 //                    //4.画像取得
 //                    [[PHImageManager defaultManager]
@@ -304,11 +342,13 @@
     }
     int selectedNo = (int)view.tag;
     
+    PHAsset *nowAsset = arrAllAssets[selectedNo];
+    
     //順番通りに配置(当該メソッドも呼び出)されるとは限らないので注意が必要！
     if (direction == MDCSwipeDirectionLeft) {
         NSLog(@"Photo deleted!");
         
-        PHAsset *nowAsset = arrAllAssets[selectedNo];
+        //nowAssetを削除する
         // 編集処理がサポートされているか
         if ([nowAsset canPerformEditOperation:PHAssetEditOperationDelete]) {
             // 変更をリクエストするblockを実行
@@ -323,33 +363,65 @@
                 }
             }];
         }
-        nowAsset = nil;
+        
+        
+        
         
     } else {
         NSLog(@"Photo saved! at no = %d", selectedNo);
         
         
-        PHAsset *nextAsset;
-        if(selectedNo > 0){
-            //次のassetを取得する
-            nextAsset = arrAllAssets[selectedNo-1];
-        }else{//次がなければnilとする
-            nextAsset = nil;
+        //nowAssetをfavoriteにセットする
+        
+        // 編集処理がサポートされているかを問い合わせる
+        // 引数にPHAssetEditOperationPropertiesを指定
+        if ([nowAsset canPerformEditOperation:PHAssetEditOperationProperties]) {
+            // Assetの編集を実行
+            [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                // PHAssetChangeRequestを作成、favoriteプロパティの変更を指定
+                PHAssetChangeRequest *request = [PHAssetChangeRequest changeRequestForAsset:nowAsset];
+                [request setFavorite:![nowAsset isFavorite]];
+                NSLog(@"%s setFavorite %@", __PRETTY_FUNCTION__, ([nowAsset isFavorite] ? @"YES to NO": @"NO to YES"));
+            } completionHandler:^(BOOL success, NSError *error) {
+                if (!success) {
+                    NSLog(@"%s setFavorite Error: %@", __PRETTY_FUNCTION__, error);
+                } else {
+                    NSLog(@"%s setFavorite success", __PRETTY_FUNCTION__);
+                }
+            }];
         }
         
-        //次がなければall processedとする
-        if(nextAsset == nil || [nextAsset isEqual:[NSNull null]]){
-            [label_property setText:@"all processed"];
-            [label_property setTextColor:[UIColor redColor]];
-        }else{
-            [label_property setText:
-             [NSString stringWithFormat:@"%d:%@",
-              selectedNo,
-              nextAsset.creationDate]];
-        }
         
+        
+        
+    }
+    nowAsset = nil;
+    
+    
+    
+    //次の処理を写真を取得する
+    PHAsset *nextAsset;
+    if(selectedNo > 0){
+        //次のassetを取得する
+        nextAsset = arrAllAssets[selectedNo-1];
+    }else{//次がなければnilとする
         nextAsset = nil;
     }
+    
+    //次がなければall processedとする
+    if(nextAsset == nil || [nextAsset isEqual:[NSNull null]]){
+        [label_property setText:@"all processed"];
+        [label_property setTextColor:[UIColor redColor]];
+        
+        
+    }else{
+        [label_property setText:
+         [NSString stringWithFormat:@"%d:%@",
+          selectedNo,
+          nextAsset.creationDate]];
+    }
+    
+    nextAsset = nil;
     
     
     //非表示状態になった(like or dislike両方)assetを削除する
