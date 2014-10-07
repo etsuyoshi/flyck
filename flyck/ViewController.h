@@ -12,9 +12,16 @@
 #import "REMenu.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SVProgressHUD/SVProgressHUD.h>
+#import "NADIconLoader.h"
 
 
-@interface ViewController : UIViewController<MDCSwipeToChooseDelegate>
+#import "NADView.h"
+
+
+@interface ViewController : UIViewController
+<MDCSwipeToChooseDelegate,NADViewDelegate>{
+    NADView* BannerAd;
+}
 @property (strong, readonly, nonatomic) REMenu *topMenu;
 
 

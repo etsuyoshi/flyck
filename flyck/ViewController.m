@@ -13,7 +13,9 @@
 
 @import Photos;
 
-@interface ViewController ()
+@interface ViewController (){
+    
+}
 
 @end
 
@@ -39,6 +41,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    [self initBannerAd];
+    
     // Do any additional setup after loading the view, typically from a nib.
     [SVProgressHUD showWithStatus:@"写真取得中..."];
     self.title = @"flyck";
@@ -65,7 +70,7 @@
                                       50);
     label_property.center =
     CGPointMake(self.view.bounds.size.width/2,
-                self.view.bounds.size.height-label_property.bounds.size.height);
+                self.view.bounds.size.height-label_property.bounds.size.height*3/2);
     [label_property setTextAlignment:NSTextAlignmentCenter];
     [label_property setTextColor: [UIColor blackColor]];
     label_property.font = [UIFont systemFontOfSize:20];
@@ -74,14 +79,62 @@
     
 }
 
+
+-(void)initBannerAd{
+    
+    
+    NSLog(@"initBannerAd");
+    int heightBanner = 50;
+    //バナーViewの初期化とサイズ、位置の設定
+    BannerAd = [[NADView alloc]
+                initWithFrame:
+                CGRectMake(0,self.view.bounds.size.height-heightBanner,
+                           self.view.bounds.size.width,heightBanner)];
+    
+    NSLog(@"bannerad = %@", BannerAd);
+    
+    //apiKeyとspotIDを設定
+    [BannerAd setNendID:@"3378e28dae0341823c82afed0ae89affff7720d9"
+                 spotID:@"245237"];
+    
+    //デリゲートオブジェクトの指定
+    [BannerAd  setDelegate:self];
+//    BannerAd.delegate = self;
+    
+    //バナーをViewに追加
+    [self.view addSubview:BannerAd];
+    
+    
+    
+    
+    [BannerAd setBackgroundColor:[UIColor blueColor]];
+    
+    
+    
+//    [BannerAd load:nil];
+    
+    
+    
+    //広告をロードする
+    [BannerAd load];
+    
+    
+//    BannerAd.center = CGPointMake(self.view.bounds.size.width/2,
+//                                  self.view.bounds.size.height/2);
+    
+    NSLog(@"initBannerAd");
+}
+
+
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+    
 }
 
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
-    
     
     
     
@@ -226,6 +279,11 @@
 //    }];
 }
 
+
+
+    
+
+
 -(void)setAssetToMDCSwipe{
     [SVProgressHUD dismiss];
     NSLog(@"setAssetToMDCSwipe for asset.count = %d", (int)arrAllAssets.count);
@@ -356,5 +414,27 @@
 //    [arrAllAssets removeObjectAtIndex:selectedNo];
     
 }
+
+
+
+
+#pragma ad delegate
+// Adの初回読み込み完了
+-(void) nadViewDidFinishLoad:(NADView *)adView{
+    NSLog(@"Ad初回読み込み成功");
+}
+
+
+
+// Adの読み込み完了通知
+-(void) nadViewDidReceiveAd:(NADView *)adView{
+    NSLog(@"Ad読み込み成功");
+}
+
+// Adの読み込み失敗通知
+-(void) nadViewDidFailToReceiveAd:(NADView *)adView{
+    NSLog(@"Ad読み込み失敗");
+}
+
 
 @end
