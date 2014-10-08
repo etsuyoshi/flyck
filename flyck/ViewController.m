@@ -39,6 +39,8 @@
     UIButton *btnUpdate;
     
     BOOL isFirstDisplay;
+    
+    NADView * BannerAd;
 }
 
 - (void)viewDidLoad {
@@ -74,7 +76,7 @@
                                       50);
     label_property.center =
     CGPointMake(self.view.bounds.size.width/2,
-                self.view.bounds.size.height-label_property.bounds.size.height);
+                self.view.bounds.size.height-label_property.bounds.size.height*3/2);
     [label_property setTextAlignment:NSTextAlignmentCenter];
     [label_property setTextColor: [UIColor blackColor]];
     label_property.font = [UIFont systemFontOfSize:20];

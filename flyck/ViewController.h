@@ -13,10 +13,12 @@
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SVProgressHUD/SVProgressHUD.h>
 
+#import "NADView.h"
 
-@interface ViewController : UIViewController<MDCSwipeToChooseDelegate>
+@interface ViewController : UIViewController
+<MDCSwipeToChooseDelegate,
+NADViewDelegate>
 @property (strong, readonly, nonatomic) REMenu *topMenu;
-
 
 @end
 
