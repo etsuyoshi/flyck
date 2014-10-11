@@ -49,6 +49,8 @@
     [self initBannerAd];
     // Do any additional setup after loading the view, typically from a nib.
     [SVProgressHUD showWithStatus:@"写真取得中..."];
+//    [SVProgressHUD showWithStatus:@"写真取得中..." maskType:SVProgressHUDMaskType];
+//    [SVProgressHUD showWithStatus:@"データ取得中..." maskType:SVProgressHUDMaskTypeGradient];
     self.title = @"flyck";
     
     isFirstDisplay = false;
@@ -481,7 +483,7 @@
     
     
     
-    [BannerAd setBackgroundColor:[UIColor blueColor]];
+//    [BannerAd setBackgroundColor:[UIColor blueColor]];
     
     
     
